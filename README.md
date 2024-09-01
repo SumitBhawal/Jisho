@@ -1,4 +1,4 @@
-# PLEASE SEE THE README FILE IN CODE FORMAT
+# PLEASE FOLLOW THE BELOW INSTRUCTIONS TO RUN THE WEBPAGE
 
 STEP 1 :
 https://github.com/SumitBhawal/Jisho-Dockerfile/tree/main
