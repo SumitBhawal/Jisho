@@ -61,7 +61,7 @@ STEP 9 :
 
 Fix :
 ## 🚨 **Important Note:** If you get an error that vendor/xxxx not found
-Run this command : ```docker-compose run --rm composer install```
+### Run this command : ```docker-compose run --rm composer install```
 
 Configuration :
 The Dockerfile is configured with the following default credentials:
