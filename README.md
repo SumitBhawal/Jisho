@@ -77,3 +77,6 @@ command : ```php artisan test```
 
 You're All Set!
 Now you can start using the web page and explore the features of Jisho.
+
+To close the app, shut shut down the container using the below command
+command : ```docker-compose down```
