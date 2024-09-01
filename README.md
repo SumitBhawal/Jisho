@@ -67,5 +67,9 @@ Database: homestead
 Password: secret
 You can modify these credentials in the Dockerfile as well as in the .env file according to your preferences.
 
+STEP 10 :
+To run the automated Unit tests run the command in php terminal 
+command : php artisan test
+
 You're All Set!
 Now you can start using the web page and explore the features of Jisho.
