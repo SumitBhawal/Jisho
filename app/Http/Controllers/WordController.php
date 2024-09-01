@@ -44,7 +44,7 @@ class WordController extends Controller
         $words = WordMeaning::inRandomOrder()->take(4)->get();
     
         if ($words->count() < 4) {
-            return redirect()->route('word.myWords')->with('error', 'Please add at least 4 words to start the test.');
+            return redirect()->back()->with('error', 'Please add at least 4 words to start the test.');
         }
     
         session(['score' => 0, 'totalQuestions' => 0]);

@@ -8,6 +8,11 @@
 </head>
 <body>
     <h1>Word Meanings</h1>
+    @if(session('error'))
+        <div class="error">
+            <p>{{ session('error') }}</p>
+        </div>
+    @endif
     <div class="word-meanings">
         @if($wordMeanings->isEmpty())
             <p>No words available.</p>

@@ -75,3 +75,11 @@ h1 {
 .btn-show-words:hover {
     background-color: #0056b3;
 }
+.error {
+    color: red;
+    border: 1px solid red;
+    padding: 10px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    background-color: #fdd;
+}
