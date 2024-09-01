@@ -30,6 +30,7 @@ src/
 The repository Jisho pulled in step 2 will come under the Jisho folder. 
 
 STEP 4 :
+Rename the kuromoji-service-files to kuromoji-service
 Download docker desktop
 And make sure to open Docker Desktop before the next step
 
