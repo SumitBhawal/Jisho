@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
+use App\Models\WordMeaning;
+use Illuminate\Support\Facades\Session;
 
 class TokenizerController extends Controller
 {
@@ -17,11 +19,15 @@ class TokenizerController extends Controller
     // Method to handle the form submission and tokenize the Japanese text
     public function tokenize(Request $request)
     {
+
         $japaneseText = $request->input('text');
         // Tokenize the Japanese text using Kuromoji
         $tokens = $this->tokenizeJapaneseText($japaneseText);
-        //return to search page with tokens
-        return view('search', ['tokens' => $tokens]);
+        // Get all saved words from the database
+        $wordMeanings = WordMeaning::all();
+        //Saved word meanings in session for further use
+        session()->put('tokens', $tokens);
+        return view('search', ['tokens' => $tokens,'wordMeanings' => $wordMeanings,]);
     }
     
     public function tokenizeJapaneseText(String $japaneseText)
@@ -32,16 +38,28 @@ class TokenizerController extends Controller
             ]);
 
             // Check if the response is successful
-            if ($response->ok()) {
+            if ($response->successful()) {
                 $tokens = $response->json();
+            } elseif ($response->serverError()) {
+                // Handle server errors (5xx)
+                Log::error('Server error occurred: ' . $response->body());
+                $tokens = [];
             } else {
                 // Handle error response
                 $tokens = [];
-                // Optionally add an error message
                 $errorMessage = 'Error fetching tokens from the service.';
             }
-        } catch (\Exception $e) {
-            // Handle exception
+        } catch (ConnectionException $e) {
+            // Handle connection exceptions like timeouts
+            Log::error('Connection error: ' . $e->getMessage());
+            $tokens = [];
+        } catch (RequestException $e) {
+            // Handle other request-related exceptions
+            Log::error('Request error: ' . $e->getMessage());
+            $tokens = [];
+        } 
+        catch (\Exception $e) {
+            // Catch any other exceptions
             $tokens = [];
             $errorMessage = 'Exception occurred: ' . $e->getMessage();
             Log::error('Exception occurred while tokenizing: ' . $e->getMessage());
@@ -49,17 +67,12 @@ class TokenizerController extends Controller
 
         // Fetch meanings for each token
         if (!empty($tokens)) {
-            $englishMeaning = [];
             $arrayOfTokens = $this->fetchMeanings($tokens);
-            // foreach ($tokens as $token) {
-            // $englishMeaning = data_get($arrayOfTokens, "{$token['surface_form']}.data.0.senses.0.english_definitions.0");
-            // dd($tokens);
-            // }
-            
+            $objectOfMeanings = $this->parseMeanings($tokens, $arrayOfTokens);
         } else {
             $arrayOfTokens = [];
         }
-        return $tokens;
+        return $objectOfMeanings;
     }
 
     private function fetchMeanings(array $tokens)
@@ -74,19 +87,69 @@ class TokenizerController extends Controller
                     'keyword' => $word,
                 ]);
 
-                if ($response->ok()) {
+                if ($response->successful()) {
                     $meaning = $response->json();
                     $meanings[$word] = $meaning;
+                } elseif ($response->serverError()) {
+                    // Handle server errors (5xx)
+                    Log::error('Server error occurred: ' . $response->body());
+                    $$meanings[$word] = [];
                 } else {
                     $meanings[$word] = 'No meaning found.';
                 }
+            } catch (ConnectionException $e) {
+                // Handle connection exceptions like timeouts
+                Log::error('Connection error: ' . $e->getMessage());
+                $tokens = [];
+            } catch (RequestException $e) {
+                // Handle other request-related exceptions
+                Log::error('Request error: ' . $e->getMessage());
+                $tokens = [];
             } catch (\Exception $e) {
-                $meanings[$word] = 'Error fetching meaning.';
-                Log::error('Exception occurred while fetching meaning: ' . $e->getMessage());
+                // Catch any other exceptions
+                Log::error('Error in fething Meanings: ' . $e->getMessage());
+                $tokens = [];
             }
         }
-        // return $meanings;
+        // dd($meanings);
         return $meanings;
     }
+
+    private function parseMeanings(array $tokens, array $meaningsArray)
+    {
+        $englishMeanings = [];
     
+        foreach ($tokens as $token) {
+            $word = $token['surface_form'];
+            // Check if the given token is お, it should be considered a prefix instead of searching meaning
+            if($word === "お"){
+                $englishMeanings[$word] = "Honorofic Prefix";
+            } else {
+                $wordMeaning = data_get($meaningsArray, "{$word}.data.0.senses.0.english_definitions.0");
+                if (!empty($wordMeaning)) {
+                    $englishMeanings[$word] = $wordMeaning;
+                } else {
+                    if (strpos($wordMeaning, '、') !== false || strpos($wordMeaning, '。') !== false) {
+                        continue;
+                    } else {
+                        Log::error("Error in fetching meaning");
+                    }
+                }
+            }
+        }
+    
+        return $englishMeanings;
+    }
+    
+    public function showTokenizedWords(Request $request)
+    {
+        // Retrieve tokenized words from the Session
+        if(session()->has('tokens')) {
+            $tokens = session()->get('tokens');
+            $wordMeanings = WordMeaning::all(); 
+        } else {
+            $tokens = [];
+        }
+        return view('search', ['tokens' => $tokens,'wordMeanings' => $wordMeanings,]);
+    }
 }
